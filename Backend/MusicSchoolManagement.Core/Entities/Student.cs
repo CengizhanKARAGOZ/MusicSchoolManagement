@@ -1,5 +1,7 @@
 
 
+using MusicSchoolManagement.Core.Entities;
+
 namespace MusicSchoolManagement.Core.Enitties;
 
 public class Student : BaseEntity

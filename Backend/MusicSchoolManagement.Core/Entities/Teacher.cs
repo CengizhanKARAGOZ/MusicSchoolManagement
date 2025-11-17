@@ -1,3 +1,5 @@
+using MusicSchoolManagement.Core.Entities;
+
 namespace MusicSchoolManagement.Core.Enitties;
 
 public class Teacher : BaseEntity

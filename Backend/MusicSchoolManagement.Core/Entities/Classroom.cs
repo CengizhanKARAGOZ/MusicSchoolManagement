@@ -1,3 +1,5 @@
+using MusicSchoolManagement.Core.Enitties;
+
 namespace MusicSchoolManagement.Core.Entities;
 
 public class Classroom : BaseEntity

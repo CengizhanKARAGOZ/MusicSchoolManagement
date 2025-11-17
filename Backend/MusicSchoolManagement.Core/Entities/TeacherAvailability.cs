@@ -1,3 +1,4 @@
+using MusicSchoolManagement.Core.Enitties;
 using MusicSchoolManagement.Core.Enums;
 
 namespace MusicSchoolManagement.Core.Entities;

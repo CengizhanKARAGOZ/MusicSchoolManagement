@@ -1,4 +1,6 @@
-namespace MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Enitties;
+
+namespace MusicSchoolManagement.Core.Entities;
 
 public class Instrument : BaseEntity
 {
