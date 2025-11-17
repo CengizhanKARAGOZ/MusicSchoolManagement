@@ -78,3 +78,8 @@ coverage/
 
 # MySQL
 *.sql
+
+# Sensitive configuration files
+appsettings.json
+appsettings.Development.json
+!appsettings.Example.json
