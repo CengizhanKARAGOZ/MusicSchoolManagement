@@ -1,6 +1,9 @@
-namespace DefaultNamespace;
+namespace MusicSchoolManagement.Core.Enums;
 
-public class PaymentMethod
+public enum PaymentMethod
 {
-    
+    Cash = 1,
+    CreditCard = 2,
+    BankTransfer = 3,
+    Other = 4
 }
