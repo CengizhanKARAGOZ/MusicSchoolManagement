@@ -23,8 +23,8 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 
-// Add services to the container.
-builder.Services.AddScoped<IAuthService, AuthService>();
+// Add services to the container
+builder.Services.AddControllers();  // ← BU SATIR OLMALI
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -89,7 +89,7 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API for managing music school operations",
         Contact = new OpenApiContact
         {
-            Name = "Cengizhan KARAGOZ",
+            Name = "Cengizhan KARAGÖZ",
             Email = "info@musicschool.com"
         }
     });
@@ -122,14 +122,14 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Music School Management API v1");
-        c.RoutePrefix = string.Empty; // Swagger at root
+        c.RoutePrefix = string.Empty;
     });
 }
 
@@ -144,6 +144,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// Seed initial data
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
