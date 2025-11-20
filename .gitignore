@@ -83,3 +83,4 @@ coverage/
 appsettings.json
 appsettings.Development.json
 !appsettings.Example.json
+/Backend/MusicSchoolManagement.Infrastructure/Migrations/
