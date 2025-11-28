@@ -16,6 +16,7 @@ public class StudentPackageRepository : GenericRepository<StudentPackage>, IStud
     {
         return await _dbSet
             .Where(sp => sp.StudentId == studentId)
+            .Include(sp => sp.Student)
             .Include(sp => sp.Package)
             .Include(sp => sp.Course)
             .ToListAsync();
