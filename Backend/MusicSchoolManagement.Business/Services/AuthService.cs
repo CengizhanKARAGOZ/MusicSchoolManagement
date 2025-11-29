@@ -57,7 +57,7 @@ public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
         var user = new User
         {
             FirstName = registerDto.FirstName,
-            LastName = registerDto.Lastname,
+            LastName = registerDto.LastName,
             Email = registerDto.Email,
             PhoneNumber = registerDto.PhoneNumber,
             PasswordHash = PasswordHelper.HashPassword(registerDto.Password),
