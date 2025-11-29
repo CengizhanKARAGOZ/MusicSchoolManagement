@@ -44,6 +44,7 @@ builder.Services.AddScoped<IInstrumentService, InstrumentService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IClassroomService, ClassroomService>();
 builder.Services.AddScoped<IPackageService, PackageService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
