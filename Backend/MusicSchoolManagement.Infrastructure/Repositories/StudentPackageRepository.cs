@@ -12,6 +12,16 @@ public class StudentPackageRepository : GenericRepository<StudentPackage>, IStud
     {
     }
 
+    // Override GetByIdAsync to include navigation properties
+    public override async Task<StudentPackage?> GetByIdAsync(int id)
+    {
+        return await _dbSet
+            .Include(sp => sp.Student)
+            .Include(sp => sp.Package)
+            .Include(sp => sp.Course)
+            .FirstOrDefaultAsync(sp => sp.Id == id);
+    }
+
     public async Task<IEnumerable<StudentPackage>> GetByStudentIdAsync(int studentId)
     {
         return await _dbSet

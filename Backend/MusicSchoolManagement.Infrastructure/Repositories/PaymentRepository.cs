@@ -16,7 +16,11 @@ public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
     {
         return await _dbSet
             .Where(p => p.StudentId == studentId)
+            .Include(p => p.Student)
             .Include(p => p.StudentPackage)
+            .ThenInclude(sp => sp.Package)
+            .Include(p => p.StudentPackage)
+            .ThenInclude(sp => sp.Course)
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync();
     }
@@ -26,6 +30,8 @@ public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
         return await _dbSet
             .Where(p => p.PaymentDate >= startDate && p.PaymentDate <= endDate)
             .Include(p => p.Student)
+            .Include(p => p.StudentPackage)
+            .ThenInclude(sp => sp.Package)
             .OrderByDescending(p => p.PaymentDate)
             .ToListAsync();
     }
@@ -35,6 +41,8 @@ public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
         return await _dbSet
             .Where(p => p.Status == PaymentStatus.Pending)
             .Include(p => p.Student)
+            .Include(p => p.StudentPackage)
+            .ThenInclude(sp => sp.Package)
             .OrderBy(p => p.PaymentDate)
             .ToListAsync();
     }
