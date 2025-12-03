@@ -1,6 +1,6 @@
+using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Teachers;
 using MusicSchoolManagement.Core.Enitties;
-using MusicSchoolManagement.Core.Enums;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -8,12 +8,24 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class TeacherService : ITeacherService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    #region Fields
 
-    public TeacherService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    #endregion
+
+    #region Constructor
+
+    public TeacherService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
+
+    #endregion
+
+    #region Public Methods
 
     public async Task<IEnumerable<TeacherDto>> GetAllTeachersAsync()
     {
@@ -25,7 +37,8 @@ public class TeacherService : ITeacherService
             var user = await _unitOfWork.Users.GetByIdAsync(teacher.UserId);
             if (user != null)
             {
-                teacherDtos.Add(MapToDto(teacher, user));
+                teacher.User = user;
+                teacherDtos.Add(_mapper.Map<TeacherDto>(teacher));
             }
         }
 
@@ -42,7 +55,8 @@ public class TeacherService : ITeacherService
         if (user == null)
             return null;
 
-        return MapToDto(teacher, user);
+        teacher.User = user;
+        return _mapper.Map<TeacherDto>(teacher);
     }
 
     public async Task<TeacherDto?> GetTeacherByUserIdAsync(int userId)
@@ -55,7 +69,8 @@ public class TeacherService : ITeacherService
         if (user == null)
             return null;
 
-        return MapToDto(teacher, user);
+        teacher.User = user;
+        return _mapper.Map<TeacherDto>(teacher);
     }
 
     public async Task<TeacherDto> CreateTeacherAsync(CreateTeacherDto createDto)
@@ -64,26 +79,20 @@ public class TeacherService : ITeacherService
         if (user == null)
             throw new InvalidOperationException("User not found");
 
-        if (user.Role != UserRole.Teacher)
+        if (user.Role != Core.Enums.UserRole.Teacher)
             throw new InvalidOperationException("User must have Teacher role");
 
         var existingTeacher = await _unitOfWork.Teachers.GetByUserIdAsync(createDto.UserId);
         if (existingTeacher != null)
             throw new InvalidOperationException("Teacher profile already exists for this user");
 
-        var teacher = new Teacher
-        {
-            UserId = createDto.UserId,
-            Specializations = createDto.Specializations,
-            HourlyRate = createDto.HourlyRate,
-            Biography = createDto.Biography,
-            AvailabilityNotes = createDto.AvailabilityNotes
-        };
+        var teacher = _mapper.Map<Teacher>(createDto);
 
         await _unitOfWork.Teachers.AddAsync(teacher);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(teacher, user);
+        teacher.User = user;
+        return _mapper.Map<TeacherDto>(teacher);
     }
 
     public async Task<TeacherDto?> UpdateTeacherAsync(int id, UpdateTeacherDto updateDto)
@@ -92,10 +101,7 @@ public class TeacherService : ITeacherService
         if (teacher == null)
             return null;
 
-        teacher.Specializations = updateDto.Specializations;
-        teacher.HourlyRate = updateDto.HourlyRate;
-        teacher.Biography = updateDto.Biography;
-        teacher.AvailabilityNotes = updateDto.AvailabilityNotes;
+        _mapper.Map(updateDto, teacher);
 
         _unitOfWork.Teachers.Update(teacher);
         await _unitOfWork.SaveChangesAsync();
@@ -104,7 +110,8 @@ public class TeacherService : ITeacherService
         if (user == null)
             return null;
 
-        return MapToDto(teacher, user);
+        teacher.User = user;
+        return _mapper.Map<TeacherDto>(teacher);
     }
 
     public async Task<bool> DeleteTeacherAsync(int id)
@@ -119,21 +126,5 @@ public class TeacherService : ITeacherService
         return true;
     }
 
-    private static TeacherDto MapToDto(Teacher teacher, User user)
-    {
-        return new TeacherDto
-        {
-            Id = teacher.Id,
-            UserId = teacher.UserId,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
-            Specializations = teacher.Specializations,
-            HourlyRate = teacher.HourlyRate,
-            Biography = teacher.Biography,
-            AvailabilityNotes = teacher.AvailabilityNotes,
-            CreatedAt = teacher.CreatedAt
-        };
-    }
+    #endregion
 }

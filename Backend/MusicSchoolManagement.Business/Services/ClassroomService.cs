@@ -1,3 +1,4 @@
+using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
@@ -7,39 +8,50 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class ClassroomService : IClassroomService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    #region Fields
 
-    public ClassroomService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    #endregion
+
+    #region Constructor
+
+    public ClassroomService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
+
+    #endregion
+
+    #region Public Methods
 
     public async Task<IEnumerable<ClassroomDto>> GetAllClassroomsAsync()
     {
         var classrooms = await _unitOfWork.Classrooms.GetAllAsync();
-        return classrooms.Select(MapToDto);
+        return _mapper.Map<IEnumerable<ClassroomDto>>(classrooms);
     }
 
     public async Task<IEnumerable<ClassroomDto>> GetActiveClassroomsAsync()
     {
-        var classrooms =  await _unitOfWork.Classrooms.GetActiveClassroomsAsync();
-        return classrooms.Select(MapToDto);
+        var classrooms = await _unitOfWork.Classrooms.GetActiveClassroomsAsync();
+        return _mapper.Map<IEnumerable<ClassroomDto>>(classrooms);
     }
 
     public async Task<IEnumerable<ClassroomDto>> GetAvailableClassroomsAsync(DateTime date, TimeSpan startTime, TimeSpan endTime)
     {
-        var classrooms =  await _unitOfWork.Classrooms.GetAvailableClassroomsAsync(date, startTime, endTime);
-        return classrooms.Select(MapToDto);
+        var classrooms = await _unitOfWork.Classrooms.GetAvailableClassroomsAsync(date, startTime, endTime);
+        return _mapper.Map<IEnumerable<ClassroomDto>>(classrooms);
     }
 
     public async Task<ClassroomDto?> GetClassroomByIdAsync(int id)
     {
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
-        return classroom == null ? null : MapToDto(classroom);
+        return classroom == null ? null : _mapper.Map<ClassroomDto>(classroom);
     }
 
-    public async Task<ClassroomDto> CreateClassroomAsync(string name, string? roomNumber, int capacity, string? suitableInstruments,
-        string? equipment)
+    public async Task<ClassroomDto> CreateClassroomAsync(string name, string? roomNumber, int capacity, string? suitableInstruments, string? equipment)
     {
         var classroom = new Classroom
         {
@@ -54,11 +66,10 @@ public class ClassroomService : IClassroomService
         await _unitOfWork.Classrooms.AddAsync(classroom);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(classroom);
+        return _mapper.Map<ClassroomDto>(classroom);
     }
 
-    public async Task<ClassroomDto?> UpdateClassroomAsync(int id, string name, string? roomNumber, int capacity, string? suitableInstruments,
-        string? equipment, bool isActive)
+    public async Task<ClassroomDto?> UpdateClassroomAsync(int id, string name, string? roomNumber, int capacity, string? suitableInstruments, string? equipment, bool isActive)
     {
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
         if (classroom == null)
@@ -74,7 +85,7 @@ public class ClassroomService : IClassroomService
         _unitOfWork.Classrooms.Update(classroom);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(classroom);
+        return _mapper.Map<ClassroomDto>(classroom);
     }
 
     public async Task<bool> DeleteClassroomAsync(int id)
@@ -82,24 +93,12 @@ public class ClassroomService : IClassroomService
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
         if (classroom == null)
             return false;
-        
+
         _unitOfWork.Classrooms.Remove(classroom);
         await _unitOfWork.SaveChangesAsync();
-        
+
         return true;
     }
-    
-    private static ClassroomDto MapToDto(Classroom classroom)
-    {
-        return new ClassroomDto
-        {
-            Id = classroom.Id,
-            Name = classroom.Name,
-            RoomNumber = classroom.RoomNumber,
-            Capacity = classroom.Capacity,
-            SuitableInstruments = classroom.SuitableInstruments,
-            Equipment = classroom.Equipment,
-            IsActive = classroom.IsActive
-        };
-    }
+
+    #endregion
 }

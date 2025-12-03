@@ -1,3 +1,4 @@
+using AutoMapper;
 using MusicSchoolManagement.Business.Helpers;
 using MusicSchoolManagement.Core.DTOs.Auth;
 using MusicSchoolManagement.Core.Enitties;
@@ -9,43 +10,46 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class AuthService : IAuthService
 {
+    #region Fields
+
     private readonly IUnitOfWork _unitOfWork;
     private readonly JwtHelper _jwtHelper;
+    private readonly IMapper _mapper;
 
+    #endregion
 
-    public AuthService(IUnitOfWork unitOfWork, JwtHelper jwtHelper)
+    #region Constructor
+
+    public AuthService(IUnitOfWork unitOfWork, JwtHelper jwtHelper, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _jwtHelper = jwtHelper;
+        _mapper = mapper;
     }
 
-public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
+    #endregion
+
+    #region Public Methods
+
+    public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
     {
-        // Find user by email
         var user = await _unitOfWork.Users.GetByEmailAsync(loginDto.Email);
         
         if (user == null || !user.IsActive)
             return null;
 
-        // Verify password
         if (!PasswordHelper.VerifyPassword(loginDto.Password, user.PasswordHash))
             return null;
 
-        // Generate tokens
         var token = _jwtHelper.GenerateToken(user);
         var refreshToken = _jwtHelper.GenerateRefreshToken();
 
-        return new LoginResponseDto
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role,
-            Token = token,
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60)
-        };
+        var response = _mapper.Map<LoginResponseDto>(user);
+        response.Token = token;
+        response.RefreshToken = refreshToken;
+        response.ExpiresAt = DateTime.UtcNow.AddMinutes(60);
+
+        return response;
     }
 
     public async Task<LoginResponseDto?> RegisterAsync(RegisterRequestDto registerDto)
@@ -54,16 +58,9 @@ public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
         if (existingUser != null)
             return null;
 
-        var user = new User
-        {
-            FirstName = registerDto.FirstName,
-            LastName = registerDto.LastName,
-            Email = registerDto.Email,
-            PhoneNumber = registerDto.PhoneNumber,
-            PasswordHash = PasswordHelper.HashPassword(registerDto.Password),
-            Role = registerDto.Role,
-            IsActive = true
-        };
+        var user = _mapper.Map<User>(registerDto);
+        user.PasswordHash = PasswordHelper.HashPassword(registerDto.Password);
+        user.IsActive = true;
 
         await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
@@ -71,16 +68,13 @@ public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
         var token = _jwtHelper.GenerateToken(user);
         var refreshToken = _jwtHelper.GenerateRefreshToken();
 
-        return new LoginResponseDto
-        {
-            UserId = user.Id,
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Role = user.Role,
-            Token = token,
-            RefreshToken = refreshToken,
-            ExpiresAt = DateTime.UtcNow.AddMinutes(60)
-        };
+        var response = _mapper.Map<LoginResponseDto>(user);
+        response.Token = token;
+        response.RefreshToken = refreshToken;
+        response.ExpiresAt = DateTime.UtcNow.AddMinutes(60);
+
+        return response;
     }
+
+    #endregion
 }

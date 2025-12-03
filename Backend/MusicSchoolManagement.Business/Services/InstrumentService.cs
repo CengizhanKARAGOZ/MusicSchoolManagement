@@ -1,3 +1,4 @@
+using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
@@ -7,29 +8,41 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class InstrumentService : IInstrumentService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    #region Fields
 
-    public InstrumentService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    #endregion
+
+    #region Constructor
+
+    public InstrumentService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
-    
+
+    #endregion
+
+    #region Public Methods
+
     public async Task<IEnumerable<InstrumentDto>> GetAllInstrumentsAsync()
     {
         var instruments = await _unitOfWork.Instruments.GetAllAsync();
-        return instruments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<InstrumentDto>>(instruments);
     }
 
     public async Task<IEnumerable<InstrumentDto>> GetActiveInstrumentsAsync()
     {
         var instruments = await _unitOfWork.Instruments.GetActiveInstrumentsAsync();
-        return instruments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<InstrumentDto>>(instruments);
     }
 
     public async Task<InstrumentDto?> GetInstrumentByIdAsync(int id)
     {
-        var instrument =  await _unitOfWork.Instruments.GetByIdAsync(id);
-        return instrument == null ? null : MapToDto(instrument);
+        var instrument = await _unitOfWork.Instruments.GetByIdAsync(id);
+        return instrument == null ? null : _mapper.Map<InstrumentDto>(instrument);
     }
 
     public async Task<InstrumentDto> CreateInstrumentAsync(string name, string? description)
@@ -44,7 +57,7 @@ public class InstrumentService : IInstrumentService
         await _unitOfWork.Instruments.AddAsync(instrument);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(instrument);
+        return _mapper.Map<InstrumentDto>(instrument);
     }
 
     public async Task<InstrumentDto?> UpdateInstrumentAsync(int id, string name, string? description, bool isActive)
@@ -60,7 +73,7 @@ public class InstrumentService : IInstrumentService
         _unitOfWork.Instruments.Update(instrument);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(instrument);
+        return _mapper.Map<InstrumentDto>(instrument);
     }
 
     public async Task<bool> DeleteInstrumentAsync(int id)
@@ -68,21 +81,12 @@ public class InstrumentService : IInstrumentService
         var instrument = await _unitOfWork.Instruments.GetByIdAsync(id);
         if (instrument == null)
             return false;
-        
+
         _unitOfWork.Instruments.Remove(instrument);
         await _unitOfWork.SaveChangesAsync();
-        
+
         return true;
     }
-    
-    private static InstrumentDto MapToDto(Instrument instrument)
-    {
-        return new InstrumentDto
-        {
-            Id = instrument.Id,
-            Name = instrument.Name,
-            Description = instrument.Description,
-            IsActive = instrument.IsActive
-        };
-    }
+
+    #endregion
 }

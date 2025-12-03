@@ -1,3 +1,4 @@
+using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Appointments;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Enums;
@@ -8,47 +9,59 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class AppointmentService : IAppointmentService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    #region Fields
 
-    public AppointmentService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    #endregion
+
+    #region Constructor
+
+    public AppointmentService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
+
+    #endregion
+
+    #region Public Methods
 
     public async Task<IEnumerable<AppointmentDto>> GetAllAppointmentsAsync()
     {
         var appointments = await _unitOfWork.Appointments.GetAllAsync();
-        return appointments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<IEnumerable<AppointmentDto>> GetAppointmentsByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
         var appointments = await _unitOfWork.Appointments.GetByDateRangeAsync(startDate, endDate);
-        return appointments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<IEnumerable<AppointmentDto>> GetAppointmentsByTeacherAsync(int teacherId, DateTime? date = null)
     {
         var appointments = await _unitOfWork.Appointments.GetByTeacherIdAsync(teacherId, date);
-        return appointments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<IEnumerable<AppointmentDto>> GetAppointmentsByStudentAsync(int studentId, DateTime? date = null)
     {
-        var appointments =  await _unitOfWork.Appointments.GetByStudentIdAsync(studentId, date);
-        return appointments.Select(MapToDto);
+        var appointments = await _unitOfWork.Appointments.GetByStudentIdAsync(studentId, date);
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<IEnumerable<AppointmentDto>> GetUpcomingAppointmentsAsync(int count)
     {
         var appointments = await _unitOfWork.Appointments.GetUpcomingAppointmentsAsync(count);
-        return appointments.Select(MapToDto);
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<AppointmentDto?> GetAppointmentByIdAsync(int id)
     {
-        var appointment =  await _unitOfWork.Appointments.GetByIdAsync(id);
-        return appointment == null ? null : MapToDto(appointment);
+        var appointment = await _unitOfWork.Appointments.GetWithDetailsAsync(id);
+        return appointment == null ? null : _mapper.Map<AppointmentDto>(appointment);
     }
 
     public async Task<AppointmentDto> CreateAppointmentAsync(CreateAppointmentDto createDto, int createdByUserId)
@@ -66,21 +79,10 @@ public class AppointmentService : IAppointmentService
         if (hasConflict)
             throw new InvalidOperationException("Time slot conflict detected");
         
-        var appointment = new Appointment
-        {
-            StudentId = createDto.StudentId,
-            TeacherId = createDto.TeacherId,
-            CourseId = createDto.CourseId,
-            ClassroomId = createDto.ClassroomId,
-            StudentPackageId = createDto.StudentPackageId,
-            AppointmentDate = createDto.AppointmentDate,
-            StartTime = createDto.StartTime,
-            EndTime = createDto.EndTime,
-            Status = AppointmentStatus.Scheduled,
-            IsRecurring = false,
-            Notes = createDto.Notes,
-            CreatedBy = createdByUserId
-        };
+        var appointment = _mapper.Map<Appointment>(createDto);
+        appointment.Status = AppointmentStatus.Scheduled;
+        appointment.IsRecurring = false;
+        appointment.CreatedBy = createdByUserId;
         
         await _unitOfWork.Appointments.AddAsync(appointment);
         await _unitOfWork.SaveChangesAsync();
@@ -130,7 +132,6 @@ public class AppointmentService : IAppointmentService
         
         while (currentDate <= createDto.EndDate)
         {
-            // Check for conflicts
             var hasConflict = await _unitOfWork.Appointments.HasConflictAsync(
                 createDto.TeacherId,
                 createDto.ClassroomId ?? 0,
@@ -168,7 +169,6 @@ public class AppointmentService : IAppointmentService
         await _unitOfWork.Appointments.AddRangeAsync(appointments.Skip(1));
         await _unitOfWork.SaveChangesAsync();
 
-        // Update student package if provided
         if (createDto.StudentPackageId.HasValue)
         {
             var studentPackage = await _unitOfWork.StudentPackages.GetByIdAsync(createDto.StudentPackageId.Value);
@@ -181,7 +181,7 @@ public class AppointmentService : IAppointmentService
             }
         }
 
-        return appointments.Select(a => MapToDto(a));
+        return _mapper.Map<IEnumerable<AppointmentDto>>(appointments);
     }
 
     public async Task<AppointmentDto?> UpdateAppointmentAsync(int id, UpdateAppointmentDto updateDto)
@@ -202,12 +202,7 @@ public class AppointmentService : IAppointmentService
         if (hasConflict)
             throw new InvalidOperationException("Time slot conflict detected");
         
-        appointment.AppointmentDate = updateDto.AppointmentDate;
-        appointment.StartTime = updateDto.StartTime;
-        appointment.EndTime = updateDto.EndTime;
-        appointment.ClassroomId = updateDto.ClassroomId;
-        appointment.Status = updateDto.Status;
-        appointment.Notes = updateDto.Notes;
+        _mapper.Map(updateDto, appointment);
         
         _unitOfWork.Appointments.Update(appointment);
         await _unitOfWork.SaveChangesAsync();
@@ -254,7 +249,11 @@ public class AppointmentService : IAppointmentService
 
         return true;
     }
-    
+
+    #endregion
+
+    #region Private Methods
+
     private async Task ValidateEntitiesAsync(int studentId, int teacherId, int courseId, int? classroomId)
     {
         var student = await _unitOfWork.Students.GetByIdAsync(studentId);
@@ -294,33 +293,6 @@ public class AppointmentService : IAppointmentService
             await _unitOfWork.SaveChangesAsync();
         }
     }
-    private static AppointmentDto MapToDto(Appointment appointment)
-    {
-        return new AppointmentDto
-        {
-            Id = appointment.Id,
-            StudentId = appointment.StudentId,
-            StudentName = appointment.Student != null 
-                ? $"{appointment.Student.FirstName} {appointment.Student.LastName}" 
-                : "Unknown",
-            TeacherId = appointment.TeacherId,
-            TeacherName = appointment.Teacher?.User != null 
-                ? $"{appointment.Teacher.User.FirstName} {appointment.Teacher.User.LastName}" 
-                : "Unknown",
-            CourseId = appointment.CourseId,
-            CourseName = appointment.Course?.Name ?? "Unknown",
-            ClassroomId = appointment.ClassroomId,
-            ClassroomName = appointment.Classroom?.Name,
-            AppointmentDate = appointment.AppointmentDate,
-            StartTime = appointment.StartTime,
-            EndTime = appointment.EndTime,
-            Status = appointment.Status,
-            IsRecurring = appointment.IsRecurring,
-            RecurringPattern = appointment.RecurringPattern,
-            RecurringEndDate = appointment.RecurringEndDate,
-            Notes = appointment.Notes,
-            CreatedAt = appointment.CreatedAt
-        };
-    }
-    
+
+    #endregion
 }

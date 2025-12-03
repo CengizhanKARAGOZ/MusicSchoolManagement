@@ -1,5 +1,5 @@
+using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Payments;
-using MusicSchoolManagement.Core.Enitties;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Enums;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
@@ -9,69 +9,53 @@ namespace MusicSchoolManagement.Business.Services;
 
 public class PaymentService : IPaymentService
 {
-    private readonly IUnitOfWork _unitOfWork;
+    #region Fields
 
-    public PaymentService(IUnitOfWork unitOfWork)
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    #endregion
+
+    #region Constructor
+
+    public PaymentService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
+
+    #endregion
+
+    #region Public Methods
 
     public async Task<IEnumerable<PaymentDto>> GetAllPaymentsAsync()
     {
         var payments = await _unitOfWork.Payments.GetAllAsync();
-        var paymentDtos = new List<PaymentDto>();
-
-        foreach (var payment in payments)
-        {
-            var student = await _unitOfWork.Students.GetByIdAsync(payment.StudentId);
-            var packageName = payment.StudentPackageId.HasValue
-                ? (await _unitOfWork.StudentPackages.GetByIdAsync(payment.StudentPackageId.Value))?.Package.Name
-                : null;
-            
-            paymentDtos.Add(MapToDto(payment, student, packageName));
-        }
-
-        return paymentDtos;
+        return _mapper.Map<IEnumerable<PaymentDto>>(payments);
     }
 
     public async Task<IEnumerable<PaymentDto>> GetPaymentsByStudentAsync(int studentId)
     {
         var payments = await _unitOfWork.Payments.GetByStudentIdAsync(studentId);
-        return payments.Select(p => MapToDto(p, p.Student, p.StudentPackage?.Package?.Name));
+        return _mapper.Map<IEnumerable<PaymentDto>>(payments);
     }
 
     public async Task<IEnumerable<PaymentDto>> GetPaymentsByDateRangeAsync(DateTime startDate, DateTime endDate)
     {
         var payments = await _unitOfWork.Payments.GetByDateRangeAsync(startDate, endDate);
-        return payments.Select(p => MapToDto(
-            p, 
-            p.Student!, 
-            p.StudentPackage?.Package?.Name
-        ));
+        return _mapper.Map<IEnumerable<PaymentDto>>(payments);
     }
 
     public async Task<IEnumerable<PaymentDto>> GetPendingPaymentsAsync()
     {
         var payments = await _unitOfWork.Payments.GetPendingPaymentsAsync();
-        return payments.Select(p => MapToDto(
-            p, 
-            p.Student!, 
-            p.StudentPackage?.Package?.Name
-        ));
+        return _mapper.Map<IEnumerable<PaymentDto>>(payments);
     }
 
     public async Task<PaymentDto?> GetPaymentByIdAsync(int id)
     {
-        var payment =  await _unitOfWork.Payments.GetByIdAsync(id);
-        if (payment == null)
-            return null;
-        
-        var student = await _unitOfWork.Students.GetByIdAsync(payment.StudentId);
-        var packageName = payment.StudentPackageId.HasValue
-            ? (await _unitOfWork.StudentPackages.GetByIdAsync(payment.StudentPackageId.Value))?.Package.Name
-            : null;
-        
-        return MapToDto(payment, student, packageName);
+        var payment = await _unitOfWork.Payments.GetByIdAsync(id);
+        return payment == null ? null : _mapper.Map<PaymentDto>(payment);
     }
 
     public async Task<PaymentDto> CreatePaymentAsync(CreatePaymentDto createDto, int createdByUserId)
@@ -80,33 +64,21 @@ public class PaymentService : IPaymentService
         if (student == null)
             throw new InvalidOperationException("Student not found");
 
-        string? packageName = null;
         if (createDto.StudentPackageId.HasValue)
         {
             var studentPackage = await _unitOfWork.StudentPackages.GetByIdAsync(createDto.StudentPackageId.Value);
             if (studentPackage == null)
                 throw new InvalidOperationException("Student package not found");
-        
-            packageName = studentPackage.Package.Name;
         }
 
-        var payment = new Payment
-        {
-            StudentId = createDto.StudentId,
-            StudentPackageId = createDto.StudentPackageId,
-            Amount = createDto.Amount,
-            PaymentDate = createDto.PaymentDate,
-            PaymentMethod = createDto.PaymentMethod,
-            Status = createDto.Status,
-            TransactionReference = createDto.TransactionReference,
-            Notes = createDto.Notes,
-            CreatedBy = createdByUserId
-        };
+        var payment = _mapper.Map<Payment>(createDto);
+        payment.CreatedBy = createdByUserId;
 
         await _unitOfWork.Payments.AddAsync(payment);
         await _unitOfWork.SaveChangesAsync();
 
-        return MapToDto(payment, student, packageName);
+        payment = await _unitOfWork.Payments.GetByIdAsync(payment.Id);
+        return _mapper.Map<PaymentDto>(payment!);
     }
 
     public async Task<decimal> GetTotalRevenueAsync(DateTime startDate, DateTime endDate)
@@ -119,33 +91,16 @@ public class PaymentService : IPaymentService
         var payment = await _unitOfWork.Payments.GetByIdAsync(id);
         if (payment == null)
             return false;
-        
-        if(payment.Status != PaymentStatus.Completed)
-            throw new InvalidOperationException("Only completed payments can be refunded.");
-        
+
+        if (payment.Status != PaymentStatus.Completed)
+            throw new InvalidOperationException("Only completed payments can be refunded");
+
         payment.Status = PaymentStatus.Refunded;
         _unitOfWork.Payments.Update(payment);
         await _unitOfWork.SaveChangesAsync();
-        
+
         return true;
     }
-    
-    private static PaymentDto MapToDto(Payment payment, Student? student, string? packageName)
-    {
-        return new PaymentDto
-        {
-            Id = payment.Id,
-            StudentId = payment.StudentId,
-            StudentName = student != null ? $"{student.FirstName} {student.LastName}" : "Unknown",
-            StudentPackageId = payment.StudentPackageId,
-            PackageName = packageName ?? payment.StudentPackage?.Package?.Name,
-            Amount = payment.Amount,
-            PaymentDate = payment.PaymentDate,
-            PaymentMethod = payment.PaymentMethod,
-            Status = payment.Status,
-            TransactionReference = payment.TransactionReference,
-            Notes = payment.Notes,
-            CreatedAt = payment.CreatedAt
-        };
-    }
+
+    #endregion
 }
