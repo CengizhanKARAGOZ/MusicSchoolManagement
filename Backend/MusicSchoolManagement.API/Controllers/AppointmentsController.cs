@@ -17,7 +17,7 @@ public class AppointmentsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all appointments (current month +/- 1)
+    /// Get all appointments
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<AppointmentDto>>), StatusCodes.Status200OK)]
@@ -80,10 +80,6 @@ public class AppointmentsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
-        
-        if (appointment == null)
-            return NotFound(ApiResponse<AppointmentDto>.ErrorResponse("Appointment not found"));
-
         return Ok(ApiResponse<AppointmentDto>.SuccessResponse(appointment));
     }
 
@@ -94,20 +90,15 @@ public class AppointmentsController : ControllerBase
     [Authorize(Roles = "Admin,Teacher")]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] CreateAppointmentDto createDto)
     {
-        try
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var appointment = await _appointmentService.CreateAppointmentAsync(createDto, userId);
-            
-            return CreatedAtAction(nameof(GetById), new { id = appointment.Id }, 
-                ApiResponse<AppointmentDto>.SuccessResponse(appointment, "Appointment created successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<AppointmentDto>.ErrorResponse(ex.Message));
-        }
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var appointment = await _appointmentService.CreateAppointmentAsync(createDto, userId);
+        
+        return CreatedAtAction(nameof(GetById), new { id = appointment.Id }, 
+            ApiResponse<AppointmentDto>.SuccessResponse(appointment, "Appointment created successfully"));
     }
 
     /// <summary>
@@ -117,20 +108,16 @@ public class AppointmentsController : ControllerBase
     [Authorize(Roles = "Admin,Teacher")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<AppointmentDto>>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<AppointmentDto>>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AppointmentDto>>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AppointmentDto>>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateRecurring([FromBody] CreateRecurringAppointmentDto createDto)
     {
-        try
-        {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var appointments = await _appointmentService.CreateRecurringAppointmentsAsync(createDto, userId);
-            
-            return CreatedAtAction(nameof(GetAll), 
-                ApiResponse<IEnumerable<AppointmentDto>>.SuccessResponse(appointments, $"{appointments.Count()} recurring appointments created successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<IEnumerable<AppointmentDto>>.ErrorResponse(ex.Message));
-        }
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+        var appointments = await _appointmentService.CreateRecurringAppointmentsAsync(createDto, userId);
+        
+        return CreatedAtAction(nameof(GetAll), 
+            ApiResponse<IEnumerable<AppointmentDto>>.SuccessResponse(appointments, 
+                $"{appointments.Count()} recurring appointments created successfully"));
     }
 
     /// <summary>
@@ -140,22 +127,11 @@ public class AppointmentsController : ControllerBase
     [Authorize(Roles = "Admin,Teacher")]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<AppointmentDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateAppointmentDto updateDto)
     {
-        try
-        {
-            var appointment = await _appointmentService.UpdateAppointmentAsync(id, updateDto);
-            
-            if (appointment == null)
-                return NotFound(ApiResponse<AppointmentDto>.ErrorResponse("Appointment not found"));
-
-            return Ok(ApiResponse<AppointmentDto>.SuccessResponse(appointment, "Appointment updated successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<AppointmentDto>.ErrorResponse(ex.Message));
-        }
+        var appointment = await _appointmentService.UpdateAppointmentAsync(id, updateDto);
+        return Ok(ApiResponse<AppointmentDto>.SuccessResponse(appointment, "Appointment updated successfully"));
     }
 
     /// <summary>
@@ -167,11 +143,7 @@ public class AppointmentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Cancel(int id, [FromBody] CancelAppointmentRequest request)
     {
-        var result = await _appointmentService.CancelAppointmentAsync(id, request.Reason);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Appointment not found"));
-
+        await _appointmentService.CancelAppointmentAsync(id, request.Reason);
         return NoContent();
     }
 
@@ -184,11 +156,7 @@ public class AppointmentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _appointmentService.DeleteAppointmentAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Appointment not found"));
-
+        await _appointmentService.DeleteAppointmentAsync(id);
         return NoContent();
     }
 }

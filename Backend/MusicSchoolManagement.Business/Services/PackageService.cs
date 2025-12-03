@@ -2,6 +2,7 @@ using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Packages;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Enums;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -43,7 +44,10 @@ public class PackageService : IPackageService
     public async Task<PackageDto?> GetPackageByIdAsync(int id)
     {
         var package = await _unitOfWork.Packages.GetByIdAsync(id);
-        return package == null ? null : _mapper.Map<PackageDto>(package);
+        if (package == null)
+            throw new NotFoundException("Package", id);
+
+        return _mapper.Map<PackageDto>(package);
     }
 
     public async Task<PackageDto> CreatePackageAsync(CreatePackageDto createDto)
@@ -60,7 +64,7 @@ public class PackageService : IPackageService
     {
         var package = await _unitOfWork.Packages.GetByIdAsync(id);
         if (package == null)
-            return null;
+            throw new NotFoundException("Package", id);
 
         _mapper.Map(updateDto, package);
 
@@ -74,7 +78,7 @@ public class PackageService : IPackageService
     {
         var package = await _unitOfWork.Packages.GetByIdAsync(id);
         if (package == null)
-            return false;
+            throw new NotFoundException("Package", id);
 
         _unitOfWork.Packages.Remove(package);
         await _unitOfWork.SaveChangesAsync();
@@ -95,26 +99,29 @@ public class PackageService : IPackageService
     public async Task<StudentPackageDto?> GetStudentPackageByIdAsync(int id)
     {
         var studentPackage = await _unitOfWork.StudentPackages.GetByIdAsync(id);
-        return studentPackage == null ? null : _mapper.Map<StudentPackageDto>(studentPackage);
+        if (studentPackage == null)
+            throw new NotFoundException("Student Package", id);
+
+        return _mapper.Map<StudentPackageDto>(studentPackage);
     }
 
     public async Task<StudentPackageDto> AssignPackageToStudentAsync(AssignPackageDto assignDto)
     {
         var student = await _unitOfWork.Students.GetByIdAsync(assignDto.StudentId);
         if (student == null)
-            throw new InvalidOperationException("Student not found");
+            throw new NotFoundException("Student", assignDto.StudentId);
 
         var package = await _unitOfWork.Packages.GetByIdAsync(assignDto.PackageId);
         if (package == null)
-            throw new InvalidOperationException("Package not found");
+            throw new NotFoundException("Package", assignDto.PackageId);
 
         var course = await _unitOfWork.Courses.GetByIdAsync(assignDto.CourseId);
         if (course == null)
-            throw new InvalidOperationException("Course not found");
+            throw new NotFoundException("Course", assignDto.CourseId);
 
         var existingPackage = await _unitOfWork.StudentPackages.GetActivePackageAsync(assignDto.StudentId, assignDto.CourseId);
         if (existingPackage != null)
-            throw new InvalidOperationException("Student already has an active package for this course");
+            throw new ConflictException("Student already has an active package for this course");
 
         var studentPackage = _mapper.Map<StudentPackage>(assignDto);
         studentPackage.EndDate = assignDto.StartDate.AddMonths(package.DurationMonths);
@@ -132,7 +139,7 @@ public class PackageService : IPackageService
     {
         var studentPackage = await _unitOfWork.StudentPackages.GetByIdAsync(id);
         if (studentPackage == null)
-            return false;
+            throw new NotFoundException("Student Package", id);
 
         studentPackage.Status = StudentPackageStatus.Cancelled;
         _unitOfWork.StudentPackages.Update(studentPackage);

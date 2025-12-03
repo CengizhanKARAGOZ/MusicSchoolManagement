@@ -2,6 +2,7 @@ using AutoMapper;
 using MusicSchoolManagement.Business.Helpers;
 using MusicSchoolManagement.Core.DTOs.Auth;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Helpers;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
@@ -35,11 +36,14 @@ public class AuthService : IAuthService
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(loginDto.Email);
         
-        if (user == null || !user.IsActive)
-            return null;
+        if (user == null)
+            throw new UnauthorizedException("Invalid email or password");
+
+        if (!user.IsActive)
+            throw new ForbiddenException("User account is inactive");
 
         if (!PasswordHelper.VerifyPassword(loginDto.Password, user.PasswordHash))
-            return null;
+            throw new UnauthorizedException("Invalid email or password");
 
         var token = _jwtHelper.GenerateToken(user);
         var refreshToken = _jwtHelper.GenerateRefreshToken();
@@ -56,7 +60,7 @@ public class AuthService : IAuthService
     {
         var existingUser = await _unitOfWork.Users.GetByEmailAsync(registerDto.Email);
         if (existingUser != null)
-            return null;
+            throw new ConflictException($"User with email '{registerDto.Email}' already exists");
 
         var user = _mapper.Map<User>(registerDto);
         user.PasswordHash = PasswordHelper.HashPassword(registerDto.Password);

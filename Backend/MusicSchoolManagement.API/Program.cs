@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MusicSchoolManagement.API.Extensions;
 using MusicSchoolManagement.Business.Helpers;
 using MusicSchoolManagement.Business.Services;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
@@ -144,6 +145,8 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandlingMiddleware();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

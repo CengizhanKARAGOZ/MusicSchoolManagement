@@ -2,6 +2,7 @@ using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Appointments;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Enums;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -61,7 +62,10 @@ public class AppointmentService : IAppointmentService
     public async Task<AppointmentDto?> GetAppointmentByIdAsync(int id)
     {
         var appointment = await _unitOfWork.Appointments.GetWithDetailsAsync(id);
-        return appointment == null ? null : _mapper.Map<AppointmentDto>(appointment);
+        if (appointment == null)
+            throw new NotFoundException("Appointment", id);
+
+        return _mapper.Map<AppointmentDto>(appointment);
     }
 
     public async Task<AppointmentDto> CreateAppointmentAsync(CreateAppointmentDto createDto, int createdByUserId)
@@ -77,7 +81,7 @@ public class AppointmentService : IAppointmentService
             createDto.EndTime);
 
         if (hasConflict)
-            throw new InvalidOperationException("Time slot conflict detected");
+            throw new ConflictException("Time slot conflict detected");
         
         var appointment = _mapper.Map<Appointment>(createDto);
         appointment.Status = AppointmentStatus.Scheduled;
@@ -92,8 +96,7 @@ public class AppointmentService : IAppointmentService
             await UpdateStudentPackageUsageAsync(createDto.StudentPackageId.Value);
         }
 
-        return await GetAppointmentByIdAsync(appointment.Id) ??
-               throw new InvalidOperationException("Failed to retrieve created appointment");
+        return await GetAppointmentByIdAsync(appointment.Id);
     }
 
     public async Task<IEnumerable<AppointmentDto>> CreateRecurringAppointmentsAsync(CreateRecurringAppointmentDto createDto, int createdByUserId)
@@ -188,7 +191,7 @@ public class AppointmentService : IAppointmentService
     {
         var appointment = await _unitOfWork.Appointments.GetByIdAsync(id);
         if (appointment == null)
-            return null;
+            throw new NotFoundException("Appointment", id);
         
         var hasConflict = await _unitOfWork.Appointments.HasConflictAsync(
             appointment.TeacherId,
@@ -200,7 +203,7 @@ public class AppointmentService : IAppointmentService
             id);
 
         if (hasConflict)
-            throw new InvalidOperationException("Time slot conflict detected");
+            throw new ConflictException("Time slot conflict detected");
         
         _mapper.Map(updateDto, appointment);
         
@@ -214,7 +217,7 @@ public class AppointmentService : IAppointmentService
     {
         var appointment = await _unitOfWork.Appointments.GetByIdAsync(id);
         if (appointment == null)
-            return false;
+            throw new NotFoundException("Appointment", id);
         
         appointment.Status = AppointmentStatus.Cancelled;
         appointment.CancellationReason = reason;
@@ -242,7 +245,7 @@ public class AppointmentService : IAppointmentService
     {
         var appointment = await _unitOfWork.Appointments.GetByIdAsync(id);
         if (appointment == null)
-            return false;
+            throw new NotFoundException("Appointment", id);
         
         _unitOfWork.Appointments.Remove(appointment);
         await _unitOfWork.SaveChangesAsync();
@@ -258,21 +261,21 @@ public class AppointmentService : IAppointmentService
     {
         var student = await _unitOfWork.Students.GetByIdAsync(studentId);
         if (student == null)
-            throw new InvalidOperationException("Student not found");
+            throw new NotFoundException("Student", studentId);
 
         var teacher = await _unitOfWork.Teachers.GetByIdAsync(teacherId);
         if (teacher == null)
-            throw new InvalidOperationException("Teacher not found");
+            throw new NotFoundException("Teacher", teacherId);
 
         var course = await _unitOfWork.Courses.GetByIdAsync(courseId);
         if (course == null)
-            throw new InvalidOperationException("Course not found");
+            throw new NotFoundException("Course", courseId);
 
         if (classroomId.HasValue)
         {
             var classroom = await _unitOfWork.Classrooms.GetByIdAsync(classroomId.Value);
             if (classroom == null)
-                throw new InvalidOperationException("Classroom not found");
+                throw new NotFoundException("Classroom", classroomId.Value);
         }
     }
     

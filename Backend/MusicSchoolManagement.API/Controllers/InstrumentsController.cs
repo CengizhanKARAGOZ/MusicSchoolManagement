@@ -1,3 +1,4 @@
+using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
 namespace MusicSchoolManagement.API.Controllers;
@@ -24,9 +25,9 @@ public class InstrumentsController : ControllerBase
         var instruments = await _instrumentService.GetAllInstrumentsAsync();
         return Ok(ApiResponse<IEnumerable<InstrumentDto>>.SuccessResponse(instruments));
     }
-    
+
     /// <summary>
-    /// Get active instruments only
+    /// Get active instruments
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<InstrumentDto>>), StatusCodes.Status200OK)]
@@ -45,10 +46,6 @@ public class InstrumentsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var instrument = await _instrumentService.GetInstrumentByIdAsync(id);
-        
-        if (instrument == null)
-            return NotFound(ApiResponse<InstrumentDto>.ErrorResponse("Instrument not found"));
-
         return Ok(ApiResponse<InstrumentDto>.SuccessResponse(instrument));
     }
 
@@ -58,6 +55,7 @@ public class InstrumentsController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<InstrumentDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<InstrumentDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateInstrumentRequest request)
     {
         var instrument = await _instrumentService.CreateInstrumentAsync(request.Name, request.Description);
@@ -72,13 +70,10 @@ public class InstrumentsController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<InstrumentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<InstrumentDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<InstrumentDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateInstrumentRequest request)
     {
         var instrument = await _instrumentService.UpdateInstrumentAsync(id, request.Name, request.Description, request.IsActive);
-        
-        if (instrument == null)
-            return NotFound(ApiResponse<InstrumentDto>.ErrorResponse("Instrument not found"));
-
         return Ok(ApiResponse<InstrumentDto>.SuccessResponse(instrument, "Instrument updated successfully"));
     }
 
@@ -91,11 +86,7 @@ public class InstrumentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _instrumentService.DeleteInstrumentAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Instrument not found"));
-
+        await _instrumentService.DeleteInstrumentAsync(id);
         return NoContent();
     }
 }

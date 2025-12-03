@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Students;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -36,7 +37,9 @@ public class StudentService : IStudentService
     public async Task<StudentDto?> GetStudentByIdAsync(int id)
     {
         var student = await _unitOfWork.Students.GetByIdAsync(id);
-        return student == null ? null : _mapper.Map<StudentDto>(student);
+        if (student == null)
+            throw new NotFoundException("Student", id);
+        return _mapper.Map<StudentDto>(student);
     }
 
     public async Task<IEnumerable<StudentDto>> GetActiveStudentsAsync()
@@ -59,7 +62,7 @@ public class StudentService : IStudentService
     {
         var student = await _unitOfWork.Students.GetByIdAsync(id);
         if (student == null)
-            return null;
+            throw new NotFoundException("Student", id);
 
         _mapper.Map(updateDto, student);
 
@@ -73,7 +76,7 @@ public class StudentService : IStudentService
     {
         var student = await _unitOfWork.Students.GetByIdAsync(id);
         if (student == null)
-            return false;
+            throw new NotFoundException("Student", id);
 
         _unitOfWork.Students.Remove(student);
         await _unitOfWork.SaveChangesAsync();

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Teachers;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -49,11 +50,11 @@ public class TeacherService : ITeacherService
     {
         var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(id);
         if (teacher == null)
-            return null;
+            throw new NotFoundException("Teacher", id);
 
         var user = await _unitOfWork.Users.GetByIdAsync(teacher.UserId);
         if (user == null)
-            return null;
+            throw new NotFoundException("User", teacher.UserId);
 
         teacher.User = user;
         return _mapper.Map<TeacherDto>(teacher);
@@ -63,11 +64,11 @@ public class TeacherService : ITeacherService
     {
         var teacher = await _unitOfWork.Teachers.GetByUserIdAsync(userId);
         if (teacher == null)
-            return null;
+            throw new NotFoundException($"Teacher with userId '{userId}' was not found.");
 
         var user = await _unitOfWork.Users.GetByIdAsync(userId);
         if (user == null)
-            return null;
+            throw new NotFoundException("User", userId);
 
         teacher.User = user;
         return _mapper.Map<TeacherDto>(teacher);
@@ -77,14 +78,14 @@ public class TeacherService : ITeacherService
     {
         var user = await _unitOfWork.Users.GetByIdAsync(createDto.UserId);
         if (user == null)
-            throw new InvalidOperationException("User not found");
+            throw new NotFoundException("User", createDto.UserId);
 
         if (user.Role != Core.Enums.UserRole.Teacher)
-            throw new InvalidOperationException("User must have Teacher role");
+            throw new BadRequestException("User must have Teacher role");
 
         var existingTeacher = await _unitOfWork.Teachers.GetByUserIdAsync(createDto.UserId);
         if (existingTeacher != null)
-            throw new InvalidOperationException("Teacher profile already exists for this user");
+            throw new ConflictException("Teacher profile already exists for this user");
 
         var teacher = _mapper.Map<Teacher>(createDto);
 
@@ -99,7 +100,7 @@ public class TeacherService : ITeacherService
     {
         var teacher = await _unitOfWork.Teachers.GetByIdAsync(id);
         if (teacher == null)
-            return null;
+            throw new NotFoundException("Teacher", id);
 
         _mapper.Map(updateDto, teacher);
 
@@ -108,7 +109,7 @@ public class TeacherService : ITeacherService
 
         var user = await _unitOfWork.Users.GetByIdAsync(teacher.UserId);
         if (user == null)
-            return null;
+            throw new NotFoundException("User", teacher.UserId);
 
         teacher.User = user;
         return _mapper.Map<TeacherDto>(teacher);
@@ -118,7 +119,7 @@ public class TeacherService : ITeacherService
     {
         var teacher = await _unitOfWork.Teachers.GetByIdAsync(id);
         if (teacher == null)
-            return false;
+            throw new NotFoundException("Teacher", id);
 
         _unitOfWork.Teachers.Remove(teacher);
         await _unitOfWork.SaveChangesAsync();

@@ -15,53 +15,29 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// User login - returns JWT token
+    /// User login
     /// </summary>
     [HttpPost("login")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto loginDto)
     {
-        var result = await _authService.LoginAsync(loginDto);
-
-        if (result == null)
-            return Unauthorized(ApiResponse<LoginResponseDto>.ErrorResponse("Invalid email or password"));
-
-        return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(result, "Login successful"));
+        var response = await _authService.LoginAsync(loginDto);
+        return Ok(ApiResponse<LoginResponseDto>.SuccessResponse(response, "Login successful"));
     }
 
     /// <summary>
-    /// Register new user (Admin/Teacher)
+    /// User registration
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto registerDto)
     {
-        var result = await _authService.RegisterAsync(registerDto);
-
-        if (result == null)
-            return BadRequest(ApiResponse<LoginResponseDto>.ErrorResponse("Email already exists"));
-
-        return CreatedAtAction(nameof(Register), ApiResponse<LoginResponseDto>.SuccessResponse(result, "Registration successful"));
-    }
-
-    /// <summary>
-    /// Test endpoint to check if authenticated
-    /// </summary>
-    [Authorize]
-    [HttpGet("me")]
-    public IActionResult GetCurrentUser()
-    {
-        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-
-        return Ok(ApiResponse<object>.SuccessResponse(new
-        {
-            userId,
-            email,
-            role
-        }));
+        var response = await _authService.RegisterAsync(registerDto);
+        return CreatedAtAction(nameof(Login), 
+            ApiResponse<LoginResponseDto>.SuccessResponse(response, "Registration successful"));
     }
 }

@@ -1,4 +1,4 @@
-
+using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
 namespace MusicSchoolManagement.API.Controllers;
@@ -27,7 +27,7 @@ public class ClassroomsController : ControllerBase
     }
 
     /// <summary>
-    /// Get active classrooms only
+    /// Get active classrooms
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ClassroomDto>>), StatusCodes.Status200OK)]
@@ -38,16 +38,13 @@ public class ClassroomsController : ControllerBase
     }
 
     /// <summary>
-    /// Get available classrooms for a specific date and time range
+    /// Get available classrooms for date/time
     /// </summary>
     [HttpGet("available")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ClassroomDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAvailable([FromQuery] DateTime date, [FromQuery] string startTime, [FromQuery] string endTime)
+    public async Task<IActionResult> GetAvailable([FromQuery] DateTime date, [FromQuery] TimeSpan startTime, [FromQuery] TimeSpan endTime)
     {
-        if (!TimeSpan.TryParse(startTime, out var start) || !TimeSpan.TryParse(endTime, out var end))
-            return BadRequest(ApiResponse<IEnumerable<ClassroomDto>>.ErrorResponse("Invalid time format. Use HH:mm:ss"));
-
-        var classrooms = await _classroomService.GetAvailableClassroomsAsync(date, start, end);
+        var classrooms = await _classroomService.GetAvailableClassroomsAsync(date, startTime, endTime);
         return Ok(ApiResponse<IEnumerable<ClassroomDto>>.SuccessResponse(classrooms));
     }
 
@@ -60,10 +57,6 @@ public class ClassroomsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var classroom = await _classroomService.GetClassroomByIdAsync(id);
-        
-        if (classroom == null)
-            return NotFound(ApiResponse<ClassroomDto>.ErrorResponse("Classroom not found"));
-        
         return Ok(ApiResponse<ClassroomDto>.SuccessResponse(classroom));
     }
 
@@ -73,13 +66,14 @@ public class ClassroomsController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<ClassroomDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<ClassroomDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateClassroomRequest request)
     {
         var classroom = await _classroomService.CreateClassroomAsync(
-            request.Name,
-            request.RoomNumber,
-            request.Capacity,
-            request.SuitableInstruments,
+            request.Name, 
+            request.RoomNumber, 
+            request.Capacity, 
+            request.SuitableInstruments, 
             request.Equipment);
         
         return CreatedAtAction(nameof(GetById), new { id = classroom.Id }, 
@@ -92,24 +86,22 @@ public class ClassroomsController : ControllerBase
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<ClassroomDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ClassroomDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<ClassroomDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateClassroomRequest request)
     {
         var classroom = await _classroomService.UpdateClassroomAsync(
-            id,
-            request.Name,
-            request.RoomNumber,
-            request.Capacity,
-            request.SuitableInstruments,
-            request.Equipment,
+            id, 
+            request.Name, 
+            request.RoomNumber, 
+            request.Capacity, 
+            request.SuitableInstruments, 
+            request.Equipment, 
             request.IsActive);
-
-        if (classroom == null)
-        {
-            return NotFound(ApiResponse<ClassroomDto>.ErrorResponse("Classroom not found"));
-        }
+        
         return Ok(ApiResponse<ClassroomDto>.SuccessResponse(classroom, "Classroom updated successfully"));
     }
-    
+
     /// <summary>
     /// Delete classroom
     /// </summary>
@@ -119,16 +111,12 @@ public class ClassroomsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _classroomService.DeleteClassroomAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Classroom not found"));
-
+        await _classroomService.DeleteClassroomAsync(id);
         return NoContent();
     }
-
 }
 
+// Request models
 public class CreateClassroomRequest
 {
     public string Name { get; set; } = string.Empty;

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Entities;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -48,7 +49,10 @@ public class ClassroomService : IClassroomService
     public async Task<ClassroomDto?> GetClassroomByIdAsync(int id)
     {
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
-        return classroom == null ? null : _mapper.Map<ClassroomDto>(classroom);
+        if (classroom == null)
+            throw new NotFoundException("Classroom", id);
+
+        return _mapper.Map<ClassroomDto>(classroom);
     }
 
     public async Task<ClassroomDto> CreateClassroomAsync(string name, string? roomNumber, int capacity, string? suitableInstruments, string? equipment)
@@ -73,7 +77,7 @@ public class ClassroomService : IClassroomService
     {
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
         if (classroom == null)
-            return null;
+            throw new NotFoundException("Classroom", id);
 
         classroom.Name = name;
         classroom.RoomNumber = roomNumber;
@@ -92,7 +96,7 @@ public class ClassroomService : IClassroomService
     {
         var classroom = await _unitOfWork.Classrooms.GetByIdAsync(id);
         if (classroom == null)
-            return false;
+            throw new NotFoundException("Classroom", id);
 
         _unitOfWork.Classrooms.Remove(classroom);
         await _unitOfWork.SaveChangesAsync();

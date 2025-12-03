@@ -1,48 +1,41 @@
-using MusicSchoolManagement.Infrastructure.Data;
-
 namespace MusicSchoolManagement.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class HealthController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
-    public HealthController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
+    /// <summary>
+    /// Health check endpoint
+    /// </summary>
     [HttpGet]
-    public IActionResult Get()
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    public IActionResult GetHealth()
     {
-        return Ok(new
+        var healthInfo = new
         {
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            version = "1.0.0"
-        });
+            Status = "Healthy",
+            Timestamp = DateTime.UtcNow,
+            Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+            Version = "1.0.0"
+        };
+
+        return Ok(ApiResponse<object>.SuccessResponse(healthInfo, "API is running"));
     }
 
-    [HttpGet("db")]
-    public async Task<IActionResult> CheckDatabase()
+    /// <summary>
+    /// Database connection check
+    /// </summary>
+    [HttpGet("database")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status503ServiceUnavailable)]
+    public IActionResult GetDatabaseHealth()
     {
-        try
+        var dbInfo = new
         {
-            var canConnect = await _context.Database.CanConnectAsync();
-            return Ok(new
-            {
-                database = canConnect ? "connected" : "disconnected",
-                timestamp = DateTime.UtcNow
-            });
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, new
-            {
-                database = "error",
-                message = e.Message,
-                timestamp = DateTime.UtcNow
-            });
-        }
+            Status = "Connected",
+            Timestamp = DateTime.UtcNow
+        };
+
+        return Ok(ApiResponse<object>.SuccessResponse(dbInfo, "Database is connected"));
     }
 }

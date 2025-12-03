@@ -2,6 +2,7 @@ using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Payments;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Enums;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -55,20 +56,23 @@ public class PaymentService : IPaymentService
     public async Task<PaymentDto?> GetPaymentByIdAsync(int id)
     {
         var payment = await _unitOfWork.Payments.GetByIdAsync(id);
-        return payment == null ? null : _mapper.Map<PaymentDto>(payment);
+        if (payment == null)
+            throw new NotFoundException("Payment", id);
+
+        return _mapper.Map<PaymentDto>(payment);
     }
 
     public async Task<PaymentDto> CreatePaymentAsync(CreatePaymentDto createDto, int createdByUserId)
     {
         var student = await _unitOfWork.Students.GetByIdAsync(createDto.StudentId);
         if (student == null)
-            throw new InvalidOperationException("Student not found");
+            throw new NotFoundException("Student", createDto.StudentId);
 
         if (createDto.StudentPackageId.HasValue)
         {
             var studentPackage = await _unitOfWork.StudentPackages.GetByIdAsync(createDto.StudentPackageId.Value);
             if (studentPackage == null)
-                throw new InvalidOperationException("Student package not found");
+                throw new NotFoundException("Student Package", createDto.StudentPackageId.Value);
         }
 
         var payment = _mapper.Map<Payment>(createDto);
@@ -77,6 +81,7 @@ public class PaymentService : IPaymentService
         await _unitOfWork.Payments.AddAsync(payment);
         await _unitOfWork.SaveChangesAsync();
 
+        // Reload with navigation properties
         payment = await _unitOfWork.Payments.GetByIdAsync(payment.Id);
         return _mapper.Map<PaymentDto>(payment!);
     }
@@ -90,10 +95,10 @@ public class PaymentService : IPaymentService
     {
         var payment = await _unitOfWork.Payments.GetByIdAsync(id);
         if (payment == null)
-            return false;
+            throw new NotFoundException("Payment", id);
 
         if (payment.Status != PaymentStatus.Completed)
-            throw new InvalidOperationException("Only completed payments can be refunded");
+            throw new BadRequestException("Only completed payments can be refunded");
 
         payment.Status = PaymentStatus.Refunded;
         _unitOfWork.Payments.Update(payment);

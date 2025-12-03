@@ -27,7 +27,7 @@ public class CoursesController : ControllerBase
     }
 
     /// <summary>
-    /// Get active courses only
+    /// Get active courses
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<CourseDto>>), StatusCodes.Status200OK)]
@@ -57,19 +57,17 @@ public class CoursesController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var course = await _courseService.GetCourseByIdAsync(id);
-        
-        if (course == null)
-            return NotFound(ApiResponse<CourseDto>.ErrorResponse("Course not found"));
-        
         return Ok(ApiResponse<CourseDto>.SuccessResponse(course));
     }
-    
+
     /// <summary>
     /// Create new course
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Create([FromBody] CreateCourseDto createDto)
     {
         var course = await _courseService.CreateCourseAsync(createDto);
@@ -84,16 +82,13 @@ public class CoursesController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<CourseDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCourseDto updateDto)
     {
         var course = await _courseService.UpdateCourseAsync(id, updateDto);
-
-        if (course == null)
-            return NotFound(ApiResponse<CourseDto>.ErrorResponse("Course not found"));
-
         return Ok(ApiResponse<CourseDto>.SuccessResponse(course, "Course updated successfully"));
     }
-    
+
     /// <summary>
     /// Delete course
     /// </summary>
@@ -103,11 +98,7 @@ public class CoursesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var success = await _courseService.DeleteCourseAsync(id);
-        
-        if (!success)
-            return NotFound(ApiResponse<object>.ErrorResponse("Course not found"));
-        
+        await _courseService.DeleteCourseAsync(id);
         return NoContent();
     }
 }

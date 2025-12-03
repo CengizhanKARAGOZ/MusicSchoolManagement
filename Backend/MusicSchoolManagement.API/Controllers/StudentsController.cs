@@ -9,12 +9,12 @@ namespace MusicSchoolManagement.API.Controllers;
 public class StudentsController : ControllerBase
 {
     private readonly IStudentService _studentService;
-    
+
     public StudentsController(IStudentService studentService)
     {
         _studentService = studentService;
     }
-    
+
     /// <summary>
     /// Get all students
     /// </summary>
@@ -27,7 +27,7 @@ public class StudentsController : ControllerBase
     }
 
     /// <summary>
-    /// Get active students only
+    /// Get active students
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<StudentDto>>), StatusCodes.Status200OK)]
@@ -46,10 +46,6 @@ public class StudentsController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var student = await _studentService.GetStudentByIdAsync(id);
-        
-        if (student == null)
-            return NotFound(ApiResponse<StudentDto>.ErrorResponse("Student not found"));
-
         return Ok(ApiResponse<StudentDto>.SuccessResponse(student));
     }
 
@@ -74,13 +70,10 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<StudentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<StudentDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<StudentDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateStudentDto updateDto)
     {
         var student = await _studentService.UpdateStudentAsync(id, updateDto);
-        
-        if (student == null)
-            return NotFound(ApiResponse<StudentDto>.ErrorResponse("Student not found"));
-
         return Ok(ApiResponse<StudentDto>.SuccessResponse(student, "Student updated successfully"));
     }
 
@@ -93,11 +86,7 @@ public class StudentsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _studentService.DeleteStudentAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Student not found"));
-
+        await _studentService.DeleteStudentAsync(id);
         return NoContent();
     }
 }

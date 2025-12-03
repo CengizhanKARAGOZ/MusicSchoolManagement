@@ -35,10 +35,6 @@ public class TeachersController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var teacher = await _teacherService.GetTeacherByIdAsync(id);
-        
-        if (teacher == null)
-            return NotFound(ApiResponse<TeacherDto>.ErrorResponse("Teacher not found"));
-
         return Ok(ApiResponse<TeacherDto>.SuccessResponse(teacher));
     }
 
@@ -51,53 +47,41 @@ public class TeachersController : ControllerBase
     public async Task<IActionResult> GetByUserId(int userId)
     {
         var teacher = await _teacherService.GetTeacherByUserIdAsync(userId);
-        
-        if (teacher == null)
-            return NotFound(ApiResponse<TeacherDto>.ErrorResponse("Teacher not found"));
-
         return Ok(ApiResponse<TeacherDto>.SuccessResponse(teacher));
     }
 
     /// <summary>
-    /// Create teacher profile for existing user
+    /// Create new teacher
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Create([FromBody] CreateTeacherDto createDto)
     {
-        try
-        {
-            var teacher = await _teacherService.CreateTeacherAsync(createDto);
-            return CreatedAtAction(nameof(GetById), new { id = teacher.Id }, 
-                ApiResponse<TeacherDto>.SuccessResponse(teacher, "Teacher profile created successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<TeacherDto>.ErrorResponse(ex.Message));
-        }
+        var teacher = await _teacherService.CreateTeacherAsync(createDto);
+        return CreatedAtAction(nameof(GetById), new { id = teacher.Id }, 
+            ApiResponse<TeacherDto>.SuccessResponse(teacher, "Teacher created successfully"));
     }
 
     /// <summary>
-    /// Update teacher profile
+    /// Update teacher
     /// </summary>
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<TeacherDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateTeacherDto updateDto)
     {
         var teacher = await _teacherService.UpdateTeacherAsync(id, updateDto);
-        
-        if (teacher == null)
-            return NotFound(ApiResponse<TeacherDto>.ErrorResponse("Teacher not found"));
-
         return Ok(ApiResponse<TeacherDto>.SuccessResponse(teacher, "Teacher updated successfully"));
     }
 
     /// <summary>
-    /// Delete teacher profile
+    /// Delete teacher
     /// </summary>
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
@@ -105,11 +89,7 @@ public class TeachersController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _teacherService.DeleteTeacherAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Teacher not found"));
-
+        await _teacherService.DeleteTeacherAsync(id);
         return NoContent();
     }
 }

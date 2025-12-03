@@ -27,7 +27,7 @@ public class PackagesController : ControllerBase
     }
 
     /// <summary>
-    /// Get active packages only
+    /// Get active packages
     /// </summary>
     [HttpGet("active")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<PackageDto>>), StatusCodes.Status200OK)]
@@ -46,19 +46,16 @@ public class PackagesController : ControllerBase
     public async Task<IActionResult> GetById(int id)
     {
         var package = await _packageService.GetPackageByIdAsync(id);
-        
-        if (package == null)
-            return NotFound(ApiResponse<PackageDto>.ErrorResponse("Package not found"));
-
         return Ok(ApiResponse<PackageDto>.SuccessResponse(package));
     }
-    
+
     /// <summary>
     /// Create new package
     /// </summary>
     [HttpPost]
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<PackageDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<PackageDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreatePackageDto createDto)
     {
         var package = await _packageService.CreatePackageAsync(createDto);
@@ -73,13 +70,10 @@ public class PackagesController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<PackageDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<PackageDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<PackageDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePackageDto updateDto)
     {
         var package = await _packageService.UpdatePackageAsync(id, updateDto);
-        
-        if (package == null)
-            return NotFound(ApiResponse<PackageDto>.ErrorResponse("Package not found"));
-
         return Ok(ApiResponse<PackageDto>.SuccessResponse(package, "Package updated successfully"));
     }
 
@@ -92,18 +86,12 @@ public class PackagesController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        var result = await _packageService.DeletePackageAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Package not found"));
-
+        await _packageService.DeletePackageAsync(id);
         return NoContent();
     }
 
-    #region Student Package Operations
-
     /// <summary>
-    /// Get student's packages
+    /// Get student packages
     /// </summary>
     [HttpGet("student/{studentId}")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<StudentPackageDto>>), StatusCodes.Status200OK)]
@@ -122,10 +110,6 @@ public class PackagesController : ControllerBase
     public async Task<IActionResult> GetStudentPackageById(int id)
     {
         var package = await _packageService.GetStudentPackageByIdAsync(id);
-        
-        if (package == null)
-            return NotFound(ApiResponse<StudentPackageDto>.ErrorResponse("Student package not found"));
-
         return Ok(ApiResponse<StudentPackageDto>.SuccessResponse(package));
     }
 
@@ -136,18 +120,13 @@ public class PackagesController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(ApiResponse<StudentPackageDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<StudentPackageDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<StudentPackageDto>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<StudentPackageDto>), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AssignPackage([FromBody] AssignPackageDto assignDto)
     {
-        try
-        {
-            var studentPackage = await _packageService.AssignPackageToStudentAsync(assignDto);
-            return CreatedAtAction(nameof(GetStudentPackageById), new { id = studentPackage.Id }, 
-                ApiResponse<StudentPackageDto>.SuccessResponse(studentPackage, "Package assigned successfully"));
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ApiResponse<StudentPackageDto>.ErrorResponse(ex.Message));
-        }
+        var studentPackage = await _packageService.AssignPackageToStudentAsync(assignDto);
+        return CreatedAtAction(nameof(GetStudentPackageById), new { id = studentPackage.Id }, 
+            ApiResponse<StudentPackageDto>.SuccessResponse(studentPackage, "Package assigned successfully"));
     }
 
     /// <summary>
@@ -157,15 +136,9 @@ public class PackagesController : ControllerBase
     [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> CancelPackage(int id)
+    public async Task<IActionResult> CancelStudentPackage(int id)
     {
-        var result = await _packageService.CancelStudentPackageAsync(id);
-        
-        if (!result)
-            return NotFound(ApiResponse<object>.ErrorResponse("Student package not found"));
-
+        await _packageService.CancelStudentPackageAsync(id);
         return NoContent();
     }
-
-    #endregion
 }

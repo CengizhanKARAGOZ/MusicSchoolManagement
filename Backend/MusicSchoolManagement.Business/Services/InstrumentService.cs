@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Common;
 using MusicSchoolManagement.Core.Entities;
+using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;
 
@@ -42,7 +43,10 @@ public class InstrumentService : IInstrumentService
     public async Task<InstrumentDto?> GetInstrumentByIdAsync(int id)
     {
         var instrument = await _unitOfWork.Instruments.GetByIdAsync(id);
-        return instrument == null ? null : _mapper.Map<InstrumentDto>(instrument);
+        if (instrument == null)
+            throw new NotFoundException("Instrument", id);
+
+        return _mapper.Map<InstrumentDto>(instrument);
     }
 
     public async Task<InstrumentDto> CreateInstrumentAsync(string name, string? description)
@@ -64,7 +68,7 @@ public class InstrumentService : IInstrumentService
     {
         var instrument = await _unitOfWork.Instruments.GetByIdAsync(id);
         if (instrument == null)
-            return null;
+            throw new NotFoundException("Instrument", id);
 
         instrument.Name = name;
         instrument.Description = description;
@@ -80,7 +84,7 @@ public class InstrumentService : IInstrumentService
     {
         var instrument = await _unitOfWork.Instruments.GetByIdAsync(id);
         if (instrument == null)
-            return false;
+            throw new NotFoundException("Instrument", id);
 
         _unitOfWork.Instruments.Remove(instrument);
         await _unitOfWork.SaveChangesAsync();
