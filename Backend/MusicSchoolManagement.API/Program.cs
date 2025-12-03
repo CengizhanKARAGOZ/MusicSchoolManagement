@@ -28,7 +28,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();  // ← BU SATIR OLMALI
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -89,11 +93,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -146,6 +145,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Exception Handling Middleware (EN BAŞTA)
 app.UseExceptionHandlingMiddleware();
 
 // Configure the HTTP request pipeline
@@ -170,11 +170,31 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed initial data
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await DbInitializer.SeedAsync(context);
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
+    try
+    {
+        logger.LogInformation("Applying database migrations...");
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await context.Database.MigrateAsync();
+        
+        logger.LogInformation("Database migrations applied successfully!");
+        await DbInitializer.SeedAsync(context);
+        
+        logger.LogInformation("Database seeding completed!");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        
+        if (!app.Environment.IsDevelopment())
+        {
+            throw;
+        }
+    }
 }
 
 try

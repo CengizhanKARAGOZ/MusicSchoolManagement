@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: musicschool-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: MusicSchool2024!
+      MYSQL_DATABASE: musicschool_db
+      MYSQL_USER: musicschool_user
+      MYSQL_PASSWORD: MusicSchool2024!
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - musicschool-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: DockerFile
+    container_name: musicschool-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=mysql;Database=musicschool_db;User=musicschool_user;Password=MusicSchool2024!;
+      - JwtSettings__SecretKey=ThisIsAVerySecretKeyForJWTTokenGenerationWithAtLeast256BitsLength!
+      - JwtSettings__Issuer=MusicSchoolAPI
+      - JwtSettings__Audience=MusicSchoolClient
+      - JwtSettings__ExpirationMinutes=60
+    ports:
+      - "5001:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - musicschool-network
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+
+networks:
+  musicschool-network:
+    driver: bridge
