@@ -1,4 +1,5 @@
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
 
 namespace MusicSchoolManagement.Core.Interfaces.Repositories;
 

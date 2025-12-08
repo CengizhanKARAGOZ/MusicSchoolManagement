@@ -1,6 +1,6 @@
-using MusicSchoolManagement.Core.Entities;
+using MusicSchoolManagement.Core.Enitties;
 
-namespace MusicSchoolManagement.Core.Enitties;
+namespace MusicSchoolManagement.Core.Entities;
 
 public class Teacher : BaseEntity
 {

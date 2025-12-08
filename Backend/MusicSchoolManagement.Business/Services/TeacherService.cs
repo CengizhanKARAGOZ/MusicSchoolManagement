@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Teachers;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Core.Interfaces.Services;

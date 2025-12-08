@@ -1,6 +1,7 @@
 using AutoMapper;
 using MusicSchoolManagement.Core.DTOs.Auth;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
 
 namespace MusicSchoolManagement.Business.Mappings;
 

@@ -1,6 +1,7 @@
 using MusicSchoolManagement.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Helpers;
 
 namespace MusicSchoolManagement.Infrastructure.Data;

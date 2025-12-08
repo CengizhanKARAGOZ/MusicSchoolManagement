@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Infrastructure.Data;
 

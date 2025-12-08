@@ -2,6 +2,8 @@ using AutoMapper;
 using MusicSchoolManagement.Business.Helpers;
 using MusicSchoolManagement.Core.DTOs.Auth;
 using MusicSchoolManagement.Core.Enitties;
+using MusicSchoolManagement.Core.Entities;
+using MusicSchoolManagement.Core.Enums;
 using MusicSchoolManagement.Core.Exceptions;
 using MusicSchoolManagement.Core.Helpers;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
@@ -35,7 +37,7 @@ public class AuthService : IAuthService
     public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto loginDto)
     {
         var user = await _unitOfWork.Users.GetByEmailAsync(loginDto.Email);
-        
+    
         if (user == null)
             throw new UnauthorizedException("Invalid email or password");
 
@@ -52,6 +54,7 @@ public class AuthService : IAuthService
         response.Token = token;
         response.RefreshToken = refreshToken;
         response.ExpiresAt = DateTime.UtcNow.AddMinutes(60);
+        response.PasswordChangeRequired = user.PasswordChangeRequired;  // ⭐ Ekleyin
 
         return response;
     }
@@ -68,6 +71,22 @@ public class AuthService : IAuthService
 
         await _unitOfWork.Users.AddAsync(user);
         await _unitOfWork.SaveChangesAsync();
+
+        if (user.Role == UserRole.Teacher)
+        {
+            var teacher = new Teacher
+            {
+                UserId = user.Id,
+                Specializations = "Not specified",
+                HourlyRate = null,
+                Biography = null,
+                AvailabilityNotes = null,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Teachers.AddAsync(teacher);
+            await _unitOfWork.SaveChangesAsync();
+        }
 
         var token = _jwtHelper.GenerateToken(user);
         var refreshToken = _jwtHelper.GenerateRefreshToken();

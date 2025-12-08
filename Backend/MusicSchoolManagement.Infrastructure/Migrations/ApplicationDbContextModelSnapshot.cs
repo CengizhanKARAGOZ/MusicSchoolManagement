@@ -91,96 +91,6 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.ToTable("Students", (string)null);
                 });
 
-            modelBuilder.Entity("MusicSchoolManagement.Core.Enitties.Teacher", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("AvailabilityNotes")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Biography")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("HourlyRate")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("Specializations")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("Teachers", (string)null);
-                });
-
-            modelBuilder.Entity("MusicSchoolManagement.Core.Enitties.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint(1)")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Users", (string)null);
-                });
-
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Appointment", b =>
                 {
                     b.Property<int>("Id")
@@ -595,6 +505,38 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.ToTable("Payments", (string)null);
                 });
 
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRevoked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.StudentPackage", b =>
                 {
                     b.Property<int>("Id")
@@ -651,6 +593,43 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.ToTable("StudentPackages", (string)null);
                 });
 
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Teacher", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AvailabilityNotes")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Biography")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal?>("HourlyRate")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Specializations")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Teachers", (string)null);
+                });
+
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.TeacherAvailability", b =>
                 {
                     b.Property<int>("Id")
@@ -688,15 +667,60 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.ToTable("TeacherAvailabilities", (string)null);
                 });
 
-            modelBuilder.Entity("MusicSchoolManagement.Core.Enitties.Teacher", b =>
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.User", b =>
                 {
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.User", "User")
-                        .WithOne("Teacher")
-                        .HasForeignKey("MusicSchoolManagement.Core.Enitties.Teacher", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Navigation("User");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("PasswordChangeRequired")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Appointment", b =>
@@ -712,7 +736,7 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.User", "CreatedByUser")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -734,7 +758,7 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                         .HasForeignKey("StudentPackageId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.Teacher", "Teacher")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.Teacher", "Teacher")
                         .WithMany("Appointments")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -763,7 +787,7 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.User", "RecordedByUser")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "RecordedByUser")
                         .WithMany()
                         .HasForeignKey("RecordedBy")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -800,7 +824,7 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.User", "User")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -812,7 +836,7 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
 
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Payment", b =>
                 {
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.User", "CreatedByUser")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "CreatedByUser")
                         .WithMany()
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -834,6 +858,17 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.Navigation("Student");
 
                     b.Navigation("StudentPackage");
+                });
+
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.StudentPackage", b =>
@@ -863,9 +898,20 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Teacher", b =>
+                {
+                    b.HasOne("MusicSchoolManagement.Core.Entities.User", "User")
+                        .WithOne("Teacher")
+                        .HasForeignKey("MusicSchoolManagement.Core.Entities.Teacher", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.TeacherAvailability", b =>
                 {
-                    b.HasOne("MusicSchoolManagement.Core.Enitties.Teacher", "Teacher")
+                    b.HasOne("MusicSchoolManagement.Core.Entities.Teacher", "Teacher")
                         .WithMany("Availabilities")
                         .HasForeignKey("TeacherId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -883,18 +929,6 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.Navigation("Payments");
 
                     b.Navigation("StudentPackages");
-                });
-
-            modelBuilder.Entity("MusicSchoolManagement.Core.Enitties.Teacher", b =>
-                {
-                    b.Navigation("Appointments");
-
-                    b.Navigation("Availabilities");
-                });
-
-            modelBuilder.Entity("MusicSchoolManagement.Core.Enitties.User", b =>
-                {
-                    b.Navigation("Teacher");
                 });
 
             modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Appointment", b =>
@@ -931,6 +965,20 @@ namespace MusicSchoolManagement.Infrastructure.Migrations
                     b.Navigation("Appointments");
 
                     b.Navigation("Payments");
+                });
+
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.Teacher", b =>
+                {
+                    b.Navigation("Appointments");
+
+                    b.Navigation("Availabilities");
+                });
+
+            modelBuilder.Entity("MusicSchoolManagement.Core.Entities.User", b =>
+                {
+                    b.Navigation("RefreshTokens");
+
+                    b.Navigation("Teacher");
                 });
 #pragma warning restore 612, 618
         }
