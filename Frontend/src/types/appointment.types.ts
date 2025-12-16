@@ -1,5 +1,3 @@
-import { AppointmentStatus } from './common.types';
-
 export interface Appointment {
     id: number;
     studentId: number;
@@ -13,10 +11,9 @@ export interface Appointment {
     appointmentDate: string;
     startTime: string;
     endTime: string;
-    status: AppointmentStatus;
-    isRecurring: boolean;
+    status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Rescheduled';
     notes?: string;
-    cancellationReason?: string;
+    createdAt: string;
 }
 
 export interface CreateAppointmentDto {
@@ -24,14 +21,17 @@ export interface CreateAppointmentDto {
     teacherId: number;
     courseId: number;
     classroomId?: number;
-    studentPackageId?: number;
     appointmentDate: string;
     startTime: string;
     endTime: string;
     notes?: string;
 }
 
-export interface CreateRecurringAppointmentDto extends CreateAppointmentDto {
-    endDate: string;
-    recurringPattern: 'Weekly' | 'Biweekly';
+export interface UpdateAppointmentDto {
+    appointmentDate: string;
+    startTime: string;
+    endTime: string;
+    classroomId?: number;
+    status: string;
+    notes?: string;
 }
