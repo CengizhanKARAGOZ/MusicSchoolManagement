@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { Login } from '../pages/Auth/Login';
-import { Register } from '../pages/Auth/Register';
 import { Dashboard } from '../pages/Dashboard/Dashboard';
 import { StudentList } from '../pages/Students/StudentList';
 import { TeachersList } from '../pages/Teachers/TeachersList';
@@ -11,13 +10,13 @@ import { PaymentsList } from '../pages/Payments/PaymentsList';
 import { CoursesList } from '../pages/Courses/CoursesList';
 import { ClassroomsList } from '../pages/Classrooms/ClassroomsList';
 import { Layout } from '../components/Layout/Layout';
+import { ChangePassword } from '../pages/Auth/ChangePassword';
 
 export const AppRoutes = () => {
     return (
         <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
 
             {/* Protected Routes */}
             <Route
@@ -37,6 +36,7 @@ export const AppRoutes = () => {
                 <Route path="payments" element={<PaymentsList />} />
                 <Route path="courses" element={<CoursesList />} />
                 <Route path="classrooms" element={<ClassroomsList />} />
+                <Route path="/change-password" element={<ChangePassword />} />
 
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

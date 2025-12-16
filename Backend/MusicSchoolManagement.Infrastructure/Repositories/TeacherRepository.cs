@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MusicSchoolManagement.Core.Enitties;
 using MusicSchoolManagement.Core.Entities;
 using MusicSchoolManagement.Core.Interfaces.Repositories;
 using MusicSchoolManagement.Infrastructure.Data;
@@ -10,6 +9,20 @@ public class TeacherRepository : GenericRepository<Teacher>, ITeacherRepository
 {
     public TeacherRepository(ApplicationDbContext context) : base(context)
     {
+    }
+
+    public override async Task<IEnumerable<Teacher>> GetAllAsync()
+    {
+        return await _dbSet
+            .Include(t => t.User)
+            .ToListAsync();
+    }
+
+    public override async Task<Teacher?> GetByIdAsync(int id)
+    {
+        return await _dbSet
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.Id == id);
     }
 
     public async Task<Teacher?> GetByUserIdAsync(int userId)

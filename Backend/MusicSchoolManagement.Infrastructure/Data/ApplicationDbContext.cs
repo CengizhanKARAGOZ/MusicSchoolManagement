@@ -30,9 +30,9 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
-        modelBuilder.Entity<User>()
-            .HasOne(u => u.Teacher)
-            .WithOne(t => t.User)
+        modelBuilder.Entity<Teacher>()
+            .HasOne(t => t.User)
+            .WithOne(u => u.Teacher)
             .HasForeignKey<Teacher>(t => t.UserId)
             .OnDelete(DeleteBehavior.Cascade);
         

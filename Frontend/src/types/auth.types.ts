@@ -23,6 +23,7 @@ export interface LoginResponse {
     token: string;
     refreshToken: string;
     expiresAt: string;
+    passwordChangeRequired?: boolean;
 }
 
 export interface User {
@@ -33,4 +34,5 @@ export interface User {
     role: UserRole;
     phoneNumber?: string;
     isActive: boolean;
+    passwordChangeRequired?: boolean;
 }

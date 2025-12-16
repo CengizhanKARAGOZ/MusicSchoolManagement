@@ -6,6 +6,7 @@ interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
+    passwordChangeRequired: boolean;
     login: (data: LoginResponse) => void;
     logout: () => void;
     updateUser: (user: User) => void;
@@ -17,6 +18,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             token: null,
             isAuthenticated: false,
+            passwordChangeRequired: false,
 
             login: (data: LoginResponse) => {
                 localStorage.setItem('token', data.token);
@@ -31,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
                     },
                     token: data.token,
                     isAuthenticated: true,
+                    passwordChangeRequired: data.passwordChangeRequired || false,
                 });
             },
 
@@ -40,11 +43,15 @@ export const useAuthStore = create<AuthState>()(
                     user: null,
                     token: null,
                     isAuthenticated: false,
+                    passwordChangeRequired: false,
                 });
             },
 
             updateUser: (user: User) => {
-                set({ user });
+                set({
+                    user,
+                    passwordChangeRequired: false
+                });
             },
         }),
         {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
     Box,
+    Button,
     Paper,
     Table,
     TableBody,
@@ -15,22 +16,33 @@ import {
     Typography,
 } from '@mui/material';
 import {
+    Add as AddIcon,
     Edit as EditIcon,
     Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useTeachers } from '../../hooks/useTeachers';
 import { TeacherFormDialog } from '../../components/Forms/TeacherFormDialog';
-import type { Teacher } from '../../types/teacher.types';
+import { useAuthStore } from '../../store/authStore';
+import { useQueryClient } from '@tanstack/react-query';
+import type {Teacher} from "../../types/teacher.types.ts";
+import {TeacherEditDialog} from "../../components/Forms/TeacherEditDialog.tsx";
 
 export const TeachersList = () => {
     const { teachers, isLoading, error, deleteTeacher } = useTeachers();
+    const { user } = useAuthStore();
+    const queryClient = useQueryClient();
     const [openDialog, setOpenDialog] = useState(false);
+    const [openEditDialog, setOpenEditDialog] = useState(false);
     const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
 
-    const handleEdit = (teacher: Teacher) => {
-        setSelectedTeacher(teacher);
+    const handleAdd = () => {
         setOpenDialog(true);
     };
+    
+    const handleEdit = (teacher: Teacher) => {
+        setSelectedTeacher(teacher);
+        setOpenEditDialog(true);
+    }
 
     const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this teacher?')) {
@@ -44,7 +56,15 @@ export const TeachersList = () => {
 
     const handleCloseDialog = () => {
         setOpenDialog(false);
+    };
+    
+    const handleCloseEditDialog = () => {
+        setOpenEditDialog(false);
         setSelectedTeacher(null);
+    }
+
+    const handleSuccess = () => {
+        queryClient.invalidateQueries({ queryKey: ['teachers'] });
     };
 
     if (isLoading) {
@@ -61,13 +81,25 @@ export const TeachersList = () => {
 
     return (
         <Box sx={{ width: '100%', height: '100%' }}>
-            <Box sx={{ mb: 3 }}>
-                <Typography variant="h4" fontWeight={600}>
-                    Teachers
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Teachers are created automatically when a user registers with Teacher role
-                </Typography>
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                    <Typography variant="h4" fontWeight={600}>
+                        Teachers
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        Admin can create teacher accounts with temporary passwords
+                    </Typography>
+                </Box>
+                {user?.role === 'Admin' && (
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={handleAdd}
+                        size="large"
+                    >
+                        Add Teacher
+                    </Button>
+                )}
             </Box>
 
             <TableContainer component={Paper} sx={{ boxShadow: 3, width: '100%', overflow: 'auto' }}>
@@ -124,14 +156,14 @@ export const TeachersList = () => {
                                             >
                                                 <EditIcon fontSize="small" />
                                             </IconButton>
-                                            <IconButton
-                                                color="error"
-                                                size="small"
-                                                onClick={() => handleDelete(teacher.id)}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                        </Box>
+                                        <IconButton
+                                            color="error"
+                                            size="small"
+                                            onClick={() => handleDelete(teacher.id)}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                            </Box>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -141,9 +173,18 @@ export const TeachersList = () => {
                                     <Typography variant="h6" color="text.secondary" gutterBottom>
                                         No teachers found
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Teachers will appear here when users register with Teacher role
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                        Add your first teacher to get started!
                                     </Typography>
+                                    {user?.role === 'Admin' && (
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<AddIcon />}
+                                            onClick={handleAdd}
+                                        >
+                                            Add Teacher
+                                        </Button>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -154,8 +195,15 @@ export const TeachersList = () => {
             <TeacherFormDialog
                 open={openDialog}
                 onClose={handleCloseDialog}
-                teacher={selectedTeacher}
+                onSuccess={handleSuccess}
             />
+            <TeacherEditDialog
+                open={openEditDialog}
+                onClose={handleCloseEditDialog}
+                teacher={selectedTeacher}
+                onSuccess={handleSuccess}
+            />
+            
         </Box>
     );
 };

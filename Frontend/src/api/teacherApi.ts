@@ -8,11 +8,6 @@ export const teacherApi = {
         return response.data.data;
     },
 
-    getActive: async (): Promise<Teacher[]> => {
-        const response = await axiosInstance.get<ApiResponse<Teacher[]>>('/Teachers/active');
-        return response.data.data;
-    },
-
     getById: async (id: number): Promise<Teacher> => {
         const response = await axiosInstance.get<ApiResponse<Teacher>>(`/Teachers/${id}`);
         return response.data.data;

@@ -121,8 +121,15 @@ public class TeacherService : ITeacherService
         var teacher = await _unitOfWork.Teachers.GetByIdAsync(id);
         if (teacher == null)
             throw new NotFoundException("Teacher", id);
-
+        
+        var userId = teacher.UserId;
+        
         _unitOfWork.Teachers.Remove(teacher);
+        
+        var user = await _unitOfWork.Users.GetByIdAsync(userId);
+        if (user != null)
+            _unitOfWork.Users.Remove(user);
+        
         await _unitOfWork.SaveChangesAsync();
 
         return true;

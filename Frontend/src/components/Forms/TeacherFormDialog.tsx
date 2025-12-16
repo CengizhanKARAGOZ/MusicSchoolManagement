@@ -16,7 +16,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useSnackbar } from 'notistack';
-import axios from '../api/axios.config';
+import axiosInstance from '../../api/axios.config';
 
 const schema = yup.object({
     firstName: yup.string().required('First name is required').max(100),
@@ -29,13 +29,13 @@ const schema = yup.object({
     availabilityNotes: yup.string(),
 });
 
-interface CreateTeacherDialogProps {
+interface TeacherFormDialogProps {
     open: boolean;
     onClose: () => void;
     onSuccess: () => void;
 }
 
-export const CreateTeacherDialog = ({ open, onClose, onSuccess }: CreateTeacherDialogProps) => {
+export const TeacherFormDialog = ({ open, onClose, onSuccess }: TeacherFormDialogProps) => {
     const { enqueueSnackbar } = useSnackbar();
     const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
@@ -60,17 +60,32 @@ export const CreateTeacherDialog = ({ open, onClose, onSuccess }: CreateTeacherD
 
     const onSubmit = async (data: any) => {
         try {
-            const response = await axios.post('/Teachers', data);
-            const password = response.data.data.temporaryPassword;
+            console.log('🔵 START - Sending data:', data);
+            const response = await axiosInstance.post('/Teachers', data);
+            console.log('🟢 SUCCESS - Response:', response);
+            console.log('🟢 Response.data:', response.data);
+            console.log('🟢 Response.data.data:', response.data.data);
 
+            const password = response.data.data?.temporaryPassword;
+            console.log('🔑 Password:', password);
+
+            if (!password) {
+                console.error('❌ NO PASSWORD!');
+                enqueueSnackbar('Error: No password received from server', { variant: 'error' });
+                return;
+            }
+
+            console.log('✅ Setting password:', password);
             setGeneratedPassword(password);
             enqueueSnackbar('Teacher created successfully!', { variant: 'success' });
-            onSuccess();
+            console.log('📞 Calling onSuccess()');
         } catch (error: any) {
+            console.error('🔴 ERROR:', error);
+            console.error('🔴 Error response:', error.response);
             enqueueSnackbar(error.response?.data?.message || 'Failed to create teacher', { variant: 'error' });
         }
     };
-
+    
     const handleCopyPassword = () => {
         if (generatedPassword) {
             navigator.clipboard.writeText(generatedPassword);
@@ -82,6 +97,7 @@ export const CreateTeacherDialog = ({ open, onClose, onSuccess }: CreateTeacherD
         reset();
         setGeneratedPassword(null);
         onClose();
+        onSuccess();
     };
 
     if (generatedPassword) {
@@ -202,22 +218,20 @@ export const CreateTeacherDialog = ({ open, onClose, onSuccess }: CreateTeacherD
                             )}
                         />
 
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Controller
-                                name="hourlyRate"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        label="Hourly Rate (₺)"
-                                        type="number"
-                                        fullWidth
-                                        error={!!errors.hourlyRate}
-                                        helperText={errors.hourlyRate?.message}
-                                    />
-                                )}
-                            />
-                        </Box>
+                        <Controller
+                            name="hourlyRate"
+                            control={control}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Hourly Rate (₺)"
+                                    type="number"
+                                    fullWidth
+                                    error={!!errors.hourlyRate}
+                                    helperText={errors.hourlyRate?.message}
+                                />
+                            )}
+                        />
 
                         <Controller
                             name="biography"

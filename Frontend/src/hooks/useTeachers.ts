@@ -9,12 +9,7 @@ export const useTeachers = () => {
         queryKey: ['teachers'],
         queryFn: teacherApi.getAll,
     });
-
-    const { data: activeTeachers } = useQuery({
-        queryKey: ['teachers', 'active'],
-        queryFn: teacherApi.getActive,
-    });
-
+    
     const createMutation = useMutation({
         mutationFn: teacherApi.create,
         onSuccess: () => {
@@ -39,7 +34,6 @@ export const useTeachers = () => {
 
     return {
         teachers,
-        activeTeachers,
         isLoading,
         error,
         createTeacher: createMutation.mutateAsync,

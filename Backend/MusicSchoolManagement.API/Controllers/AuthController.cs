@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using MusicSchoolManagement.Core.DTOs.Auth;
+using MusicSchoolManagement.Core.Helpers;
 using MusicSchoolManagement.Core.Interfaces.Services;
+using MusicSchoolManagement.Infrastructure.Data;
 
 namespace MusicSchoolManagement.API.Controllers;
 
@@ -8,10 +11,11 @@ namespace MusicSchoolManagement.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
+    private readonly ApplicationDbContext _context;
+    public AuthController(IAuthService authService, ApplicationDbContext context)
     {
         _authService = authService;
+        _context = context;
     }
 
     /// <summary>
@@ -39,5 +43,37 @@ public class AuthController : ControllerBase
         var response = await _authService.RegisterAsync(registerDto);
         return CreatedAtAction(nameof(Login), 
             ApiResponse<LoginResponseDto>.SuccessResponse(response, "Registration successful"));
+    }
+    
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim))
+        {
+            return Unauthorized(ApiResponse<object>.ErrorResponse("User not authenticated"));
+        }
+
+        var userId = int.Parse(userIdClaim);
+        var user = await _context.Users.FindAsync(userId);
+
+        if (user == null)
+        {
+            return NotFound(ApiResponse<object>.ErrorResponse("User not found"));
+        }
+
+        if (!PasswordHelper.VerifyPassword(dto.OldPassword, user.PasswordHash))
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse("Current password is incorrect"));
+        }
+
+        user.PasswordHash = PasswordHelper.HashPassword(dto.NewPassword);
+        user.PasswordChangeRequired = false;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<object>.SuccessResponse(null, "Password changed successfully"));
     }
 }
